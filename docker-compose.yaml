@@ -1,0 +1,44 @@
+version: '3.8'
+
+volumes:
+  redis-data:
+    name: redis-data
+  sqlite_data:
+    name: sqlite_data
+  wildfly_logs:
+    name: wildfly_logs
+
+services:
+  docker-simplebot:
+    build: .
+    restart: always
+    depends_on:
+      - redis
+      - sqlite3
+    links:
+      - "redis"
+      - "sqlite3"
+    environment:
+      - TZ=Europe/Moscow
+    volumes:
+      - wildfly_logs:/opt/jboss/wildfly/standalone/log
+    container_name: wildfly-app
+
+  sqlite3:
+    image: nouchka/sqlite3:latest
+    container_name: sqlite3
+    command: [ ".open main.db" ]
+    stdin_open: true
+    tty: true
+    restart: always
+    volumes:
+      - sqlite_data:/root/db/
+
+  redis:
+    image: redis:latest
+    command: [ "redis-server", "--appendonly", "yes" ]
+    container_name: redis
+    hostname: redis
+    restart: always
+    volumes:
+      - redis-data:/data
